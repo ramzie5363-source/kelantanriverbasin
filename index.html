@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sungai Kelantan Flood Hazard & Exposure WebGIS | Ramzie</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-panel: rgba(252, 252, 251, 0.96);
+      --border: #e2e4e1;
+      --text-main: #181a18;
+      --text-muted: #5c615d;
+      --accent: #3d5a4c;       /* Muted sage green */
+      --accent-light: #eef2ef;
+      --haz-1: #eab308;        /* Low: 0.01 - 0.5m */
+      --haz-2: #ea580c;        /* Moderate: 0.5 - 1.2m */
+      --haz-3: #b91c1c;        /* High: > 1.2m */
+      --safe: #16a34a;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text-main);
+      background: #f4f5f4;
+      overflow: hidden;
+    }
+
+    #map {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    /* Sidebar Control Panel */
+    .sidebar {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      width: 350px;
+      max-height: calc(100vh - 32px);
+      background: var(--bg-panel);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sidebar-header {
+      flex-shrink: 0;
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid var(--border);
+      background: #ffffff;
+    }
+
+    .badge {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--accent);
+      background: var(--accent-light);
+      padding: 3px 8px;
+      border-radius: 4px;
+      margin-bottom: 6px;
+    }
+
+    .sidebar-header h1 {
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.3;
+      letter-spacing: -0.01em;
+    }
+
+    .sidebar-header p {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+
+    .sidebar-body {
+      padding: 16px 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Filter Select */
+    .control-group > label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    select {
+      width: 100%;
+      padding: 8px 10px;
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--text-main);
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      outline: none;
+      cursor: pointer;
+    }
+    select:focus { border-color: var(--accent); }
+
+    /* KPI Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .kpi-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+
+    .kpi-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+    }
+
+    .kpi-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .kpi-sub {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Layer Toggles */
+    .layer-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+.layer-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 500;
+      text-transform: none;
+      letter-spacing: normal;
+      color: var(--text-main);
+      padding: 7px 10px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .layer-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    .swatch-line {
+      width: 14px;
+      height: 3px;
+      border-radius: 2px;
+      background: #2563eb;
+      flex-shrink: 0;
+    }
+
+    .swatch-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--haz-3);
+      border: 1.5px solid #fff;
+      box-shadow: 0 0 0 1px #999;
+      flex-shrink: 0;
+    }
+
+    input[type="checkbox"] {
+      accent-color: var(--accent);
+      width: 15px;
+      height: 15px;
+      cursor: pointer;
+    }
+
+    /* Legend Box */
+    .legend-box {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 12px;
+    }
+
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .legend-row:first-child { margin-top: 0; }
+
+    /* Footer */
+    .sidebar-footer {
+      padding: 10px 20px;
+      border-top: 1px solid var(--border);
+      background: #fafbfa;
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .sidebar-footer a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    /* Custom Leaflet Popup */
+    .leaflet-popup-content-wrapper {
+      border-radius: 10px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+      font-family: 'Inter', sans-serif;
+    }
+    .popup-title {
+      font-weight: 700;
+      font-size: 13px;
+      margin-bottom: 6px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #eee;
+    }
+    .popup-table {
+      width: 100%;
+      font-size: 12px;
+      border-collapse: collapse;
+    }
+    .popup-table td { padding: 2px 0; }
+    .popup-table td:last-child {
+      text-align: right;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    /* Loading Overlay */
+    #loader {
+      position: fixed;
+      inset: 0;
+      background: rgba(255,255,255,0.92);
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-main);
+    }
+    .spinner {
+      width: 28px;
+      height: 28px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 640px) {
+      .sidebar {
+        width: calc(100vw - 24px);
+        left: 12px;
+        top: 12px;
+        max-height: 46vh;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="loader">
+    <div class="spinner"></div>
+    <div id="loader-text">Loading Sungai Kelantan Spatial Layers...</div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <span class="badge">Hydrology & Flood Risk • RP100</span>
+      <h1>Sungai Kelantan River Basin</h1>
+      <p>100-year return period fluvial flood hazard (CEMS-GloFAS) & critical facility exposure across 104 HydroBASIN sub-catchments.</p>
+    </div>
+
+    <div class="sidebar-body">
+      <!-- District Filter -->
+      <div class="control-group">
+        <label for="districtFilter">Filter by District (Jajahan)</label>
+        <select id="districtFilter">
+          <option value="ALL">All Districts (Full Basin — 104 Sub-basins)</option>
+        </select>
+      </div>
+
+      <!-- Dynamic KPIs -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Catchment Area</div>
+          <div class="kpi-val" id="kpi-area">—</div>
+          <div class="kpi-sub" id="kpi-basins">104 sub-basins</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">RP100 Flood Zone</div>
+          <div class="kpi-val" id="kpi-flood">—</div>
+          <div class="kpi-sub" id="kpi-pct">— of area</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">River Network</div>
+          <div class="kpi-val" id="kpi-river">—</div>
+          <div class="kpi-sub">Strahler Order ≥ 2</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Exposed Facilities</div>
+          <div class="kpi-val" id="kpi-exposed">—</div>
+          <div class="kpi-sub" id="kpi-total-fac">Schools & Clinics</div>
+        </div>
+      </div>
+
+      <!-- Layer Controls -->
+      <div class="control-group">
+        <label>Map Layers</label>
+        <div class="layer-list">
+          <label class="layer-item">
+            <span class="layer-left">
+              <span class="swatch" style="background:#b91c1c;"></span>
+              Flood Hazard Zones (RP100)
+            </span>
+            <input type="checkbox" id="toggle-flood" checked />
+          </label>
+          <label class="layer-item">
+            <span class="layer-left">
+              <span class="swatch-line"></span>
+              HydroRIVERS Network
+            </span>
+            <input type="checkbox" id="toggle-rivers" checked />
+          </label>
+          <label class="layer-item">
+            <span class="layer-left">
+              <span class="swatch-dot"></span>
+              Schools & Clinics (Exposure)
+            </span>
+            <input type="checkbox" id="toggle-exposure" checked />
+          </label>
+          <label class="layer-item">
+            <span class="layer-left">
+              <span class="swatch" style="background:#cbd5e1; border:1px solid #64748b;"></span>
+              HydroBASINS Sub-Catchments
+            </span>
+            <input type="checkbox" id="toggle-basins" checked />
+          </label>
+        </div>
+      </div>
+
+      <!-- Hazard & Exposure Legend -->
+      <div class="control-group">
+        <label>Flood Depth & Facility Exposure</label>
+        <div class="legend-box">
+          <div class="legend-row">
+            <span class="swatch" style="background: var(--haz-1);"></span>
+            <span><strong>Low (0.01 – 0.5 m):</strong> Road / minor inundation</span>
+          </div>
+          <div class="legend-row">
+            <span class="swatch" style="background: var(--haz-2);"></span>
+            <span><strong>Moderate (0.5 – 1.2 m):</strong> Ground-floor risk</span>
+          </div>
+          <div class="legend-row">
+            <span class="swatch" style="background: var(--haz-3);"></span>
+            <span><strong>High (> 1.2 m):</strong> Severe evacuation hazard</span>
+          </div>
+          <div class="legend-row" style="margin-top:8px; padding-top:6px; border-top:1px dashed var(--border);">
+            <span class="swatch-dot" style="background: var(--safe);"></span>
+            <span>Facility outside RP100 flood extent</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <span>Data: JRC GloFAS • HydroSHEDS • OSM</span>
+      <a href="https://portfolio.ramzie.my" target="_blank" rel="noopener">portfolio.ramzie.my</a>
+    </div>
+  </aside>
+
+  <div id="map"></div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script>
+    // Initialize Map centered on Sungai Kelantan Basin
+    const map = L.map('map', {
+      zoomControl: false
+    }).setView([5.45, 102.05], 9);
+
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+// Clean Minimalist Basemaps (No API Key Required)
+    const esriGray = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles © Esri — Esri, DeLorme, NAVTEQ',
+      maxZoom: 16
+    }).addTo(map);
+
+    const esriGrayLabels = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 16,
+      pane: 'markerPane'
+    }).addTo(map);
+
+    const esriSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles © Esri',
+      maxZoom: 18
+    });
+
+    L.control.layers(
+      { 'Minimal Light Gray': esriGray, 'Esri World Imagery': esriSat },
+      { 'Place Labels': esriGrayLabels },
+      { position: 'topright' }
+    ).addTo(map);
+
+    // Layer Groups
+    const basinLayerGroup = L.layerGroup().addTo(map);
+    const floodLayerGroup = L.layerGroup().addTo(map);
+    const riverLayerGroup = L.layerGroup().addTo(map);
+    const exposureLayerGroup = L.layerGroup().addTo(map);
+
+    let rawBasins = null;
+    let rawExposure = null;
+    let basinGeoJsonLayer = null;
+
+    const hazardColors = {
+      1: '#eab308',
+      2: '#ea580c',
+      3: '#b91c1c'
+    };
+
+    const hazardLabels = {
+      1: 'Low (0.01–0.5 m)',
+      2: 'Moderate (0.5–1.2 m)',
+      3: 'High (> 1.2 m)'
+    };
+
+    // Load all 4 GeoJSON datasets concurrently
+    Promise.all([
+      fetch('data/kelantan_subbasins.geojson').then(r => r.json()),
+      fetch('data/kelantan_flood_zones.geojson').then(r => r.json()),
+      fetch('data/kelantan_rivers.geojson').then(r => r.json()),
+      fetch('data/kelantan_exposure.geojson').then(r => r.json())
+    ])
+    .then(([basins, floods, rivers, exposure]) => {
+      rawBasins = basins;
+      rawExposure = exposure;
+
+      populateDistrictDropdown(basins);
+      renderFloods(floods);
+      renderRivers(rivers);
+      renderBasins('ALL');
+      renderExposure(exposure);
+
+      document.getElementById('loader').style.display = 'none';
+    })
+    .catch(err => {
+      console.error(err);
+      document.getElementById('loader-text').innerHTML =
+        '<strong>Error loading GeoJSON files.</strong><br>Run via a local web server (e.g. VS Code Live Server or <code>python -m http.server</code>).';
+    });
+
+function populateDistrictDropdown(basins) {
+      const select = document.getElementById('districtFilter');
+      const kelantanDistricts = new Set([
+        'Kota Bharu',
+        'Tumpat',
+        'Pasir Mas',
+        'Tanah Merah',
+        'Machang',
+        'Kuala Krai',
+        'Gua Musang',
+        'Bachok',
+        'Pasir Puteh',
+        'Jeli'
+      ]);
+
+      const availableDistricts = new Set();
+      basins.features.forEach(f => {
+        const d = (f.properties['name:en'] || '').trim();
+        if (kelantanDistricts.has(d)) {
+          availableDistricts.add(d);
+        }
+      });
+
+      Array.from(availableDistricts).sort().forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d;
+        opt.textContent = d;
+        select.appendChild(opt);
+      });
+
+      select.addEventListener('change', (e) => {
+        renderBasins(e.target.value);
+      });
+    }
+
+    function renderBasins(selectedDistrict) {
+      basinLayerGroup.clearLayers();
+
+      const filteredFeatures = selectedDistrict === 'ALL'
+        ? rawBasins.features
+        : rawBasins.features.filter(f => f.properties['name:en'] === selectedDistrict);
+
+      // Compute KPI totals
+      let totalArea = 0;
+      let totalFlood = 0;
+      let totalRiver = 0;
+
+      filteredFeatures.forEach(f => {
+        totalArea += Number(f.properties.area_km2 || 0);
+        totalFlood += Number(f.properties.flood_km2 || 0);
+        totalRiver += Number(f.properties.river_km || 0);
+      });
+
+      const floodPct = totalArea > 0 ? ((totalFlood / totalArea) * 100).toFixed(1) : '0.0';
+
+      document.getElementById('kpi-area').textContent = `${totalArea.toLocaleString()} km²`;
+      document.getElementById('kpi-basins').textContent = `${filteredFeatures.length} sub-basins`;
+      document.getElementById('kpi-flood').textContent = `${totalFlood.toFixed(1)} km²`;
+      document.getElementById('kpi-pct').textContent = `${floodPct}% of area`;
+      document.getElementById('kpi-river').textContent = `${Math.round(totalRiver).toLocaleString()} km`;
+
+      basinGeoJsonLayer = L.geoJSON({ type: 'FeatureCollection', features: filteredFeatures }, {
+        style: (feature) => {
+          const pct = Number(feature.properties.flood_zones_pc || 0);
+          return {
+            color: '#475569',
+            weight: 1,
+            fillColor: pct > 20 ? '#94a3b8' : pct > 5 ? '#cbd5e1' : '#f1f5f9',
+            fillOpacity: 0.25
+          };
+        },
+        onEachFeature: (feature, layer) => {
+          const p = feature.properties;
+          const pct = Number(p.flood_zones_pc || 0).toFixed(2);
+          layer.bindPopup(`
+            <div class="popup-title">Sub-Basin #${p.HYBAS_ID}</div>
+            <table class="popup-table">
+              <tr><td>District:</td><td>${p['name:en'] || 'N/A'}</td></tr>
+              <tr><td>Catchment Area:</td><td>${p.area_km2} km²</td></tr>
+              <tr><td>Flooded Area (RP100):</td><td>${Number(p.flood_km2 || 0).toFixed(2)} km² (${pct}%)</td></tr>
+              <tr><td>River Length:</td><td>${Number(p.river_km || 0).toFixed(2)} km</td></tr>
+              <tr><td>Strahler Order:</td><td>${p.ORDER}</td></tr>
+            </table>
+          `);
+
+          layer.on({
+            mouseover: (e) => {
+              e.target.setStyle({ weight: 2.2, color: '#1e293b', fillOpacity: 0.4 });
+            },
+            mouseout: (e) => {
+              basinGeoJsonLayer.resetStyle(e.target);
+            }
+          });
+        }
+      }).addTo(basinLayerGroup);
+
+      if (filteredFeatures.length > 0) {
+        map.fitBounds(basinGeoJsonLayer.getBounds(), { padding: [30, 30] });
+      }
+    }
+
+    function renderFloods(floods) {
+      L.geoJSON(floods, {
+        style: (feature) => {
+          const lvl = Number(feature.properties.hazard_lvl);
+          return {
+            color: hazardColors[lvl] || '#b91c1c',
+            weight: 0.5,
+            fillColor: hazardColors[lvl] || '#b91c1c',
+            fillOpacity: 0.62
+          };
+        },
+        onEachFeature: (feature, layer) => {
+          const lvl = Number(feature.properties.hazard_lvl);
+          layer.bindPopup(`
+            <div class="popup-title">RP100 Flood Hazard Zone</div>
+            <table class="popup-table">
+              <tr><td>Severity Tier:</td><td><span class="pill" style="background:${hazardColors[lvl]}">${hazardLabels[lvl] || 'Flood Zone'}</span></td></tr>
+              <tr><td>Return Period:</td><td>100-Year (1% AEP)</td></tr>
+            </table>
+          `);
+        }
+      }).addTo(floodLayerGroup);
+    }
+
+    function renderRivers(rivers) {
+      L.geoJSON(rivers, {
+        style: (feature) => {
+          const ord = Number(feature.properties.ORD_STRA || 2);
+          return {
+            color: '#2563eb',
+            weight: ord >= 5 ? 2.6 : ord >= 4 ? 1.8 : 1.0,
+            opacity: 0.8
+          };
+        }
+      }).addTo(riverLayerGroup);
+    }
+
+    function renderExposure(exposure) {
+      let exposedCount = 0;
+      const totalCount = exposure.features.length;
+
+      L.geoJSON(exposure, {
+        pointToLayer: (feature, latlng) => {
+          const lvl = Number(feature.properties.hazard_lvl);
+          const isExposed = [1, 2, 3].includes(lvl);
+          if (isExposed) exposedCount++;
+
+          return L.circleMarker(latlng, {
+            radius: isExposed ? 6 : 4,
+            fillColor: isExposed ? hazardColors[lvl] : '#16a34a',
+            color: '#ffffff',
+            weight: 1.5,
+            fillOpacity: 0.95
+          });
+        },
+        onEachFeature: (feature, layer) => {
+          const p = feature.properties;
+          const lvl = Number(p.hazard_lvl);
+          const isExposed = [1, 2, 3].includes(lvl);
+          const typeLabel = (p.amenity || p.healthcare || 'Facility').toUpperCase();
+
+          layer.bindPopup(`
+            <div class="popup-title">${p.name || 'Unnamed Facility'}</div>
+            <table class="popup-table">
+              <tr><td>Type:</td><td>${typeLabel}</td></tr>
+              <tr><td>Flood Status:</td><td>
+                <span class="pill" style="background:${isExposed ? hazardColors[lvl] : '#16a34a'}">
+                  ${isExposed ? hazardLabels[lvl] : 'Outside Flood Zone'}
+                </span>
+              </td></tr>
+            </table>
+          `);
+        }
+      }).addTo(exposureLayerGroup);
+
+      document.getElementById('kpi-exposed').textContent = `${exposedCount} / ${totalCount}`;
+      document.getElementById('kpi-total-fac').textContent = `${exposedCount} inside RP100 zone`;
+    }
+
+    // Layer Visibility Toggles
+    const toggles = [
+      ['toggle-flood', floodLayerGroup],
+      ['toggle-rivers', riverLayerGroup],
+      ['toggle-exposure', exposureLayerGroup],
+      ['toggle-basins', basinLayerGroup]
+    ];
+    toggles.forEach(([id, group]) => {
+      document.getElementById(id).addEventListener('change', (e) => {
+        if (e.target.checked) map.addLayer(group);
+        else map.removeLayer(group);
+      });
+    });
+  </script>
+</body>
+</html>
