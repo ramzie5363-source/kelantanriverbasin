@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sungai Kelantan Flood Hazard & Exposure WebGIS | Ramzie</title>
+  <title>Kelantan River Flood Hazard & Exposure WebGIS | Ramzie</title>
 
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
@@ -43,21 +43,21 @@
     }
 
     /* Sidebar Control Panel */
-    .sidebar {
-      position: absolute;
-      top: 16px;
-      left: 16px;
-      width: 350px;
-      max-height: calc(100vh - 32px);
-      background: var(--bg-panel);
-      backdrop-filter: blur(8px);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
-      z-index: 1000;
+    .sidebar { 
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      height: 100vh;
+      width: 340px;           
+      margin: 0;
+      border-radius: 0;       
+      border-right: 1px solid #e2e8f0;
       display: flex;
       flex-direction: column;
-      overflow: hidden;
+      justify-content: space-between;
+      overflow-y: auto;
+      z-index: 1000;
     }
 
     .sidebar-header {
@@ -434,7 +434,7 @@
 
     <div class="sidebar-footer">
       <span>Data: JRC GloFAS • HydroSHEDS • OSM</span>
-      <a href="https://portfolio.ramzie.my" target="_blank" rel="noopener">portfolio.ramzie.my</a>
+      <span>Ramzie Rosli</span>
     </div>
   </aside>
 
