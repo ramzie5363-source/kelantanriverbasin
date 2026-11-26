@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kelantan River Flood Hazard & Exposure WebGIS | Ramzie</title>
+  <title>Kelantan River Flood Hazard & Exposure WebGIS | Ramzie Rosli</title>
 
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
@@ -14,7 +14,7 @@
 
   <style>
     :root {
-      --bg-panel: rgba(252, 252, 251, 0.96);
+      --bg-panel: rgba(255, 255, 255, 0.96);
       --border: #e2e4e1;
       --text-main: #181a18;
       --text-muted: #5c615d;
@@ -42,36 +42,38 @@
       z-index: 1;
     }
 
-    /* Sidebar Control Panel */
+    /* Transparent Floating Sidebar Container */
     .sidebar { 
       position: fixed;
-      top: 0;
-      left: 0;
-      bottom: 0;
-      height: 100vh;
-      width: 350px;
-      padding: 20ox;
-      margin: 0;
-      border-radius: 0;       
-      border-right: 1px solid #e2e8f0;
+      top: 16px;
+      left: 16px;
+      bottom: 16px;
+      width: 345px;
+      background: transparent;
+      border: none;       
+      box-shadow: none;
+      padding: 0;
       display: flex;
       flex-direction: column;
-      gap: 14px;
-      overflow-y: auto;
+      gap: 12px;
+      pointer-events: none;
       z-index: 1000;
+    }
+
+    /* Shared Floating Card Style for Header, Body, and Footer */
+    .sidebar-header,
+    .sidebar-body,
+    .sidebar-footer {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+      pointer-events: auto;
     }
 
     .sidebar-header {
       flex-shrink: 0;
-      padding: 18px 20px 14px;
-      border-bottom: 1px solid var(--border);
-      background: #ffffff;
-    }
-
-    .sidebar-footer {
-      margin-top: auto;       
-      padding-top: 12px;
-      border-top: 1px solid #e2e8f0;
+      padding: 16px 18px;
     }
 
     .badge {
@@ -96,18 +98,18 @@
     }
 
     .sidebar-header p {
-      font-size: 12px;
+      font-size: 11.5px;
       color: var(--text-muted);
-      margin-top: 4px;
-      line-height: 1.4;
+      margin-top: 6px;
+      line-height: 1.48;
     }
 
     .sidebar-body {
-      padding: 16px 20px;
+      padding: 16px 18px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 14px;
     }
 
     /* Filter Select */
@@ -172,17 +174,15 @@
     .layer-list {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 7px;
     }
 
-.layer-item {
+    .layer-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      font-size: 13px;
+      font-size: 12.5px;
       font-weight: 500;
-      text-transform: none;
-      letter-spacing: normal;
       color: var(--text-main);
       padding: 7px 10px;
       background: #fff;
@@ -236,7 +236,7 @@
       border: 1px solid var(--border);
       border-radius: 8px;
       padding: 10px 12px;
-      font-size: 12px;
+      font-size: 11.5px;
     }
 
     .legend-row {
@@ -247,21 +247,16 @@
     }
     .legend-row:first-child { margin-top: 0; }
 
-    /* Footer */
+    /* Floating Footer Card */
     .sidebar-footer {
-      padding: 10px 20px;
-      border-top: 1px solid var(--border);
-      background: #fafbfa;
+      margin-top: auto;
+      flex-shrink: 0;
+      padding: 11px 18px;
       font-size: 11px;
       color: var(--text-muted);
       display: flex;
       justify-content: space-between;
       align-items: center;
-    }
-    .sidebar-footer a {
-      color: var(--accent);
-      text-decoration: none;
-      font-weight: 600;
     }
 
     /* Custom Leaflet Popup */
@@ -328,7 +323,7 @@
         width: calc(100vw - 24px);
         left: 12px;
         top: 12px;
-        max-height: 46vh;
+        bottom: 12px;
       }
     }
   </style>
@@ -344,10 +339,7 @@
     <div class="sidebar-header">
       <span class="badge">Hydrology & Flood Risk • RP100</span>
       <h1>Sungai Kelantan River Basin</h1>
-      <p>100-year return period fluvial flood hazard (CEMS-GloFAS) & critical facility exposure across 104 HydroBASIN sub-catchments.</p>
-      <p class="subtitle">
-  An interactive hydrological and flood-exposure assessment for Kelantan’s primary river catchment (34,885 km²). Built from HydroSHEDS Level 9 sub-basins and Strahler order ≥ 2 river networks overlaid with CEMS-GLOFAS 100-year return period (RP100) inundation zones to identify vulnerable education and healthcare infrastructure. Select a district (jajahan) below or click any facility marker for depth metrics.
-</p>
+      <p>An interactive hydrological and flood-exposure assessment for Kelantan’s primary river catchment (34,885 km²). Built from HydroSHEDS Level 9 sub-basins and Strahler order ≥ 2 river networks overlaid with CEMS-GloFAS 100-year return period (RP100) inundation zones to identify vulnerable schools, clinics, and hospitals. Select a district (jajahan) below or click any marker for depth metrics.</p>
     </div>
 
     <div class="sidebar-body">
@@ -404,7 +396,7 @@
           <label class="layer-item">
             <span class="layer-left">
               <span class="swatch-dot"></span>
-              Schools & Clinics (Exposure)
+              Schools, Clinics & Hospitals (Exposure)
             </span>
             <input type="checkbox" id="toggle-exposure" checked />
           </label>
@@ -444,7 +436,7 @@
 
     <div class="sidebar-footer">
       <span>Data: JRC GloFAS • HydroSHEDS • OSM</span>
-      <span>Ramzie Rosli</span>
+      <span><strong>Ramzie Rosli</strong></span>
     </div>
   </aside>
 
@@ -460,7 +452,7 @@
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-// Clean Minimalist Basemaps (No API Key Required)
+    // Clean Minimalist Basemaps (No API Key Required)
     const esriGray = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
       attribution: 'Tiles © Esri — Esri, DeLorme, NAVTEQ',
       maxZoom: 16
@@ -529,7 +521,7 @@
         '<strong>Error loading GeoJSON files.</strong><br>Run via a local web server (e.g. VS Code Live Server or <code>python -m http.server</code>).';
     });
 
-function populateDistrictDropdown(basins) {
+    function populateDistrictDropdown(basins) {
       const select = document.getElementById('districtFilter');
       const kelantanDistricts = new Set([
         'Kota Bharu',
@@ -626,7 +618,10 @@ function populateDistrictDropdown(basins) {
       }).addTo(basinLayerGroup);
 
       if (filteredFeatures.length > 0) {
-        map.fitBounds(basinGeoJsonLayer.getBounds(), { padding: [30, 30] });
+        map.fitBounds(basinGeoJsonLayer.getBounds(), {
+          paddingTopLeft: [370, 30],
+          paddingBottomRight: [30, 30]
+        });
       }
     }
 
