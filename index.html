@@ -49,13 +49,14 @@
       left: 0;
       bottom: 0;
       height: 100vh;
-      width: 340px;           
+      width: 350px;
+      padding: 20ox;
       margin: 0;
       border-radius: 0;       
       border-right: 1px solid #e2e8f0;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
+      gap: 14px;
       overflow-y: auto;
       z-index: 1000;
     }
@@ -65,6 +66,12 @@
       padding: 18px 20px 14px;
       border-bottom: 1px solid var(--border);
       background: #ffffff;
+    }
+
+    .sidebar-footer {
+      margin-top: auto;       
+      padding-top: 12px;
+      border-top: 1px solid #e2e8f0;
     }
 
     .badge {
@@ -338,6 +345,9 @@
       <span class="badge">Hydrology & Flood Risk • RP100</span>
       <h1>Sungai Kelantan River Basin</h1>
       <p>100-year return period fluvial flood hazard (CEMS-GloFAS) & critical facility exposure across 104 HydroBASIN sub-catchments.</p>
+      <p class="subtitle">
+  An interactive hydrological and flood-exposure assessment for Kelantan’s primary river catchment (34,885 km²). Built from HydroSHEDS Level 9 sub-basins and Strahler order ≥ 2 river networks overlaid with CEMS-GLOFAS 100-year return period (RP100) inundation zones to identify vulnerable education and healthcare infrastructure. Select a district (jajahan) below or click any facility marker for depth metrics.
+</p>
     </div>
 
     <div class="sidebar-body">
@@ -369,7 +379,7 @@
         <div class="kpi-card">
           <div class="kpi-label">Exposed Facilities</div>
           <div class="kpi-val" id="kpi-exposed">—</div>
-          <div class="kpi-sub" id="kpi-total-fac">Schools & Clinics</div>
+          <div class="kpi-sub" id="kpi-total-fac">Schools, Hospitals & Clinics</div>
         </div>
       </div>
 
